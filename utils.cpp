@@ -14,12 +14,12 @@ int inputIntInRange(const string& prompt, int minValue, int maxValue) {
         cout << prompt;
         string input;
         getline(cin, input);
-        log("Ââîä: " + input);
+        log("Ввод: " + input);
 
         stringstream ss(input);
         if (ss >> value && value >= minValue && value <= maxValue) {
             return value;
         }
-        cout << "Ââåäèòå ÷èñëî îò " << minValue << " äî " << maxValue << ".\n";
+        cout << "Введите число от " << minValue << " до " << maxValue << ".\n";
     }
 }
