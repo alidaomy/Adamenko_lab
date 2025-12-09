@@ -134,6 +134,7 @@
   <ItemGroup>
     <ClInclude Include="CompressorStation.h" />
     <ClInclude Include="CompressorStationManager.h" />
+    <ClInclude Include="Network.h" />
     <ClInclude Include="Pipe.h" />
     <ClInclude Include="PipeManager.h" />
     <ClInclude Include="utils.h" />
