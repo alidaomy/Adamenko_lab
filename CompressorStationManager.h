@@ -23,6 +23,8 @@ public:
     void saveToFile(const string& filename) const;
     void loadFromFile(const string& filename);
     bool isEmpty() const { return stations.empty(); }
+    CompressorStation getStationById(int id) const;
+    bool stationExists(int id) const;
 };
 
 #endif

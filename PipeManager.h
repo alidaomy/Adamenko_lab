@@ -20,11 +20,14 @@ public:
     void deletePipe();
     vector<int> searchByName(const string& name) const;
     vector<int> searchByRepairStatus(bool inRepair) const;
+    vector<int> searchByDiameter(int diameter) const;
     void batchEdit(const vector<int>& ids);
     void batchDelete(const vector<int>& ids);
     void saveToFile(const string& filename) const;
     void loadFromFile(const string& filename);
     bool isEmpty() const { return pipes.empty(); }
+    Pipe getPipeById(int id) const;
+    map<int, Pipe> getAllPipes() const { return pipes; }
 };
 
 #endif

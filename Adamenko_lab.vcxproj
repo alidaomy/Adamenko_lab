@@ -126,6 +126,7 @@
     <ClCompile Include="Adamenko_lab.cpp" />
     <ClCompile Include="CompressorStation.cpp" />
     <ClCompile Include="CompressorStationManager.cpp" />
+    <ClCompile Include="Network.cpp" />
     <ClCompile Include="Pipe.cpp" />
     <ClCompile Include="PipeManager.cpp" />
     <ClCompile Include="utils.cpp" />

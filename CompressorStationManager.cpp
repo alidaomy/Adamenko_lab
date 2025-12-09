@@ -37,14 +37,14 @@ void CompressorStationManager::editStation() {
     int id = readPositive<int>("Введите ID КС: ", "Неверный ID");
     auto it = stations.find(id);
     if (it != stations.end()) {
-        cout << "1. Увеличить рабочие цеха\n";
-        cout << "2. Уменьшить рабочие цеха\n";
+        cout << "1. Увеличить рабочие цехи\n";
+        cout << "2. Уменьшить рабочие цехи\n";
         int choice = inputIntInRange("Выберите действие: ", 1, 2);
+        int change = readPositive<int>("Введите количество: ", "Неверное количество");
 
-        int change = readPositive<int>("Введите количество цехов: ", "Неверное количество");
-        if (choice == 2) change = -change;
+        if (choice == 1) it->second.changeWorkingShops(change);
+        else it->second.changeWorkingShops(-change);
 
-        it->second.changeWorkingShops(change);
         cout << "КС изменена.\n";
     }
     else {
@@ -86,9 +86,6 @@ vector<int> CompressorStationManager::searchByName(const string& name) const {
             }
         }
     }
-    else {
-        cout << "КС не найдены.\n";
-    }
 
     return foundIds;
 }
@@ -100,9 +97,9 @@ vector<int> CompressorStationManager::searchByUnusedPercent(double percent, char
         bool match = false;
 
         switch (op) {
-        case '>': match = stationPercent > percent; break;
-        case '<': match = stationPercent < percent; break;
-        case '=': match = abs(stationPercent - percent) < 0.01; break;
+        case '=': match = (stationPercent == percent); break;
+        case '>': match = (stationPercent > percent); break;
+        case '<': match = (stationPercent < percent); break;
         }
 
         if (match) {
@@ -119,9 +116,6 @@ vector<int> CompressorStationManager::searchByUnusedPercent(double percent, char
                 cout << "ID " << id << ": " << it->second << endl;
             }
         }
-    }
-    else {
-        cout << "КС не найдены.\n";
     }
 
     return foundIds;
@@ -166,4 +160,16 @@ void CompressorStationManager::loadFromFile(const string& filename) {
     file.close();
     cout << "Загружено КС: " << count << endl;
     log("Загрузка КС из " + filename + ": " + to_string(count));
+}
+
+CompressorStation CompressorStationManager::getStationById(int id) const {
+    auto it = stations.find(id);
+    if (it != stations.end()) {
+        return it->second;
+    }
+    return CompressorStation(); // Возвращаем пустую КС если не найдена
+}
+
+bool CompressorStationManager::stationExists(int id) const {
+    return stations.find(id) != stations.end();
 }

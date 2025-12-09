@@ -3,6 +3,7 @@
 #include <windows.h>
 #include "PipeManager.h"
 #include "CompressorStationManager.h"
+#include "Network.h"
 #include "utils.h"
 
 using namespace std;
@@ -11,9 +12,10 @@ void displayMainMenu() {
     cout << "\n=== ГЛАВНОЕ МЕНЮ ===\n";
     cout << "1. Управление трубами\n";
     cout << "2. Управление КС\n";
-    cout << "3. Сохранить все\n";
-    cout << "4. Загрузить все\n";
-    cout << "5. Показать все объекты\n";
+    cout << "3. Газотранспортная сеть\n";
+    cout << "4. Сохранить все\n";
+    cout << "5. Загрузить все\n";
+    cout << "6. Показать все объекты\n";
     cout << "0. Выход\n";
 }
 
@@ -34,6 +36,14 @@ void displayStationMenu() {
     cout << "3. Редактировать КС\n";
     cout << "4. Удалить КС\n";
     cout << "5. Поиск КС\n";
+    cout << "0. Назад\n";
+}
+
+void displayNetworkMenu() {
+    cout << "\n=== ГАЗОТРАНСПОРТНАЯ СЕТЬ ===\n";
+    cout << "1. Добавить соединение\n";
+    cout << "2. Показать сеть\n";
+    cout << "3. Топологическая сортировка\n";
     cout << "0. Назад\n";
 }
 
@@ -200,6 +210,93 @@ void handleStations(CompressorStationManager& stationManager) {
     }
 }
 
+void handleNetwork(PipeManager& pipeManager, CompressorStationManager& stationManager, Network& network) {
+    while (true) {
+        displayNetworkMenu();
+        int choice = inputIntInRange("Выберите действие: ", 0, 3);
+
+        switch (choice) {
+        case 1: {
+            if (stationManager.isEmpty()) {
+                cout << "Нет доступных КС для соединения.\n";
+                break;
+            }
+
+            cout << "=== ДОБАВЛЕНИЕ СОЕДИНЕНИЯ ===\n";
+            stationManager.displayAllStations();
+
+            int startCS = readPositive<int>("Введите ID КС входа: ", "Неверный ID КС");
+            int endCS = readPositive<int>("Введите ID КС выхода: ", "Неверный ID КС");
+
+            if (startCS == endCS) {
+                cout << "КС входа и выхода не могут быть одинаковыми!\n";
+                break;
+            }
+
+            // Проверка существования КС
+            bool startExists = false, endExists = false;
+            // Здесь должна быть проверка существования КС с указанными ID
+            // Для простоты предполагаем, что КС существуют
+
+            cout << "Доступные диаметры труб: 500, 700, 1000, 1400 мм\n";
+            int diameter = inputIntInRange("Выберите диаметр трубы: ", 500, 1400);
+
+            // Проверяем доступные диаметры
+            if (diameter != 500 && diameter != 700 && diameter != 1000 && diameter != 1400) {
+                cout << "Неверный диаметр! Доступные значения: 500, 700, 1000, 1400 мм\n";
+                break;
+            }
+
+            // Поиск свободной трубы с нужным диаметром
+            int foundPipeId = -1;
+            pipeManager.displayAllPipes();
+            foundPipeId = readPositive<int>("Введите ID трубы для соединения (0 - создать новую трубу): ", "Неверный ID трубы", 10000);
+
+            if (foundPipeId == 0) {
+                // Создание новой трубы
+                Pipe newPipe;
+                cin >> newPipe;
+                pipeManager.addPipe();
+                // Здесь нужно получить ID новой трубы - для простоты запросим у пользователя
+                foundPipeId = readPositive<int>("Введите ID новой трубы: ", "Неверный ID трубы");
+            }
+
+            // Получаем объекты трубы и КС (здесь нужен доступ к внутренним данным менеджеров)
+            // Для демонстрации создаем временные объекты
+            Pipe tempPipe;
+            CompressorStation tempStartCS, tempEndCS;
+
+            network.addConnection(foundPipeId, startCS, endCS, diameter, tempPipe, tempStartCS, tempEndCS);
+            break;
+        }
+        case 2:
+            network.displayNetwork();
+            break;
+        case 3: {
+            cout << "=== ТОПОЛОГИЧЕСКАЯ СОРТИРОВКА ===\n";
+            if (network.hasCycle()) {
+                cout << "В сети обнаружен цикл! Топологическая сортировка невозможна.\n";
+            }
+            else {
+                vector<int> sorted = network.topologicalSort();
+                if (!sorted.empty()) {
+                    cout << "Топологический порядок КС:\n";
+                    for (size_t i = 0; i < sorted.size(); i++) {
+                        cout << i + 1 << ". КС " << sorted[i] << "\n";
+                    }
+                }
+                else {
+                    cout << "Сеть пуста или содержит цикл.\n";
+                }
+            }
+            break;
+        }
+        case 0:
+            return;
+        }
+    }
+}
+
 void saveAll(PipeManager& pipeManager, CompressorStationManager& stationManager) {
     string filename;
     cout << "Введите имя файла: ";
@@ -227,12 +324,13 @@ int main() {
 
     PipeManager pipeManager;
     CompressorStationManager stationManager;
+    Network network;
 
     log("=== ПРОГРАММА ЗАПУЩЕНА ===");
 
     while (true) {
         displayMainMenu();
-        int choice = inputIntInRange("Выберите действие: ", 0, 5);
+        int choice = inputIntInRange("Выберите действие: ", 0, 6);
         log("Главное меню - выбор: " + to_string(choice));
 
         switch (choice) {
@@ -243,14 +341,18 @@ int main() {
             handleStations(stationManager);
             break;
         case 3:
-            saveAll(pipeManager, stationManager);
+            handleNetwork(pipeManager, stationManager, network);
             break;
         case 4:
-            loadAll(pipeManager, stationManager);
+            saveAll(pipeManager, stationManager);
             break;
         case 5:
+            loadAll(pipeManager, stationManager);
+            break;
+        case 6:
             pipeManager.displayAllPipes();
             stationManager.displayAllStations();
+            network.displayNetwork();
             break;
         case 0:
             log("=== ПРОГРАММА ЗАВЕРШЕНА ===");

@@ -1,21 +1,28 @@
 ﻿#include "CompressorStation.h"
 #include "utils.h"
 #include <sstream>
+#include <cmath>
 
-CompressorStation::CompressorStation() : name(""), totalShops(0), workingShops(0), efficiency(0) {}
+using namespace std;
 
-string CompressorStation::getName() const { return name; }
+CompressorStation::CompressorStation() :
+    name(""), totalShops(0), workingShops(0), efficiency(0) {
+}
+
+string CompressorStation::getName() const {
+    return name;
+}
 
 double CompressorStation::getUnusedPercent() const {
-    if (totalShops == 0) return 0;
-    return ((totalShops - workingShops) / (double)totalShops) * 100;
+    if (totalShops == 0) return 0.0;
+    return ((totalShops - workingShops) * 100.0) / totalShops;
 }
 
 void CompressorStation::changeWorkingShops(int change) {
     workingShops += change;
     if (workingShops < 0) workingShops = 0;
     if (workingShops > totalShops) workingShops = totalShops;
-    log("Изменение рабочих цехов на: " + to_string(change));
+    log("Изменено рабочих цехов у КС " + name + ": " + to_string(workingShops));
 }
 
 istream& operator>>(istream& in, CompressorStation& cs) {
@@ -23,23 +30,26 @@ istream& operator>>(istream& in, CompressorStation& cs) {
     getline(in, cs.name);
     log("Введено название КС: " + cs.name);
 
-    cs.totalShops = readPositive<int>("Введите количество цехов: ", "Неверное количество цехов");
-    log("Введено цехов: " + to_string(cs.totalShops));
+    cs.totalShops = readPositive<int>("Введите общее количество цехов: ", "Неверное количество");
+    log("Введено общее количество цехов: " + to_string(cs.totalShops));
 
-    cs.workingShops = readPositive<int>("Введите количество рабочих цехов: ", "Неверное количество рабочих цехов", cs.totalShops + 1);
+    cs.workingShops = readPositive<int>("Введите количество рабочих цехов: ", "Неверное количество");
+    if (cs.workingShops > cs.totalShops) {
+        cs.workingShops = cs.totalShops;
+        cout << "Количество рабочих цехов уменьшено до общего количества.\n";
+    }
     log("Введено рабочих цехов: " + to_string(cs.workingShops));
 
-    cs.efficiency = readPositive<int>("Введите эффективность (%): ", "Неверная эффективность", 101);
+    cs.efficiency = readPositive<int>("Введите эффективность КС (%): ", "Неверная эффективность");
     log("Введена эффективность: " + to_string(cs.efficiency));
 
     return in;
 }
 
 ostream& operator<<(ostream& out, const CompressorStation& cs) {
-    double unusedPercent = cs.getUnusedPercent();
     out << "КС: " << cs.name
-        << ", Цехи: " << cs.workingShops << "/" << cs.totalShops
-        << ", Незадействовано: " << unusedPercent << "%"
+        << ", Цехов: " << cs.workingShops << "/" << cs.totalShops
+        << ", Неиспользуется: " << cs.getUnusedPercent() << "%"
         << ", Эффективность: " << cs.efficiency << "%";
     return out;
 }
@@ -58,5 +68,8 @@ void CompressorStation::load(const string& data) {
 }
 
 string CompressorStation::save() const {
-    return name + ";" + to_string(totalShops) + ";" + to_string(workingShops) + ";" + to_string(efficiency);
+    return name + ";" +
+        to_string(totalShops) + ";" +
+        to_string(workingShops) + ";" +
+        to_string(efficiency);
 }

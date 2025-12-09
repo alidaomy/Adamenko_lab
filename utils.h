@@ -27,7 +27,6 @@ T readPositive(const string& prompt, const string& errorMessage) {
             continue;
         }
 
-        // Заменяем запятые на точки для дробных чисел
         for (size_t i = 0; i < input.size(); i++) {
             if (input[i] == ',') input[i] = '.';
         }

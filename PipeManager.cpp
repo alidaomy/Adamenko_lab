@@ -12,7 +12,7 @@ void PipeManager::addPipe() {
     pipes[nextId] = pipe;
 
     cout << "Труба добавлена с ID: " << nextId << endl;
-    log("Труба добавлена с ID: " + to_string(nextId));
+    log("Добавлена труба с ID: " + to_string(nextId));
     nextId++;
 }
 
@@ -25,7 +25,7 @@ void PipeManager::displayAllPipes() const {
     for (const auto& pair : pipes) {
         cout << "ID " << pair.first << ": " << pair.second << endl;
     }
-    log("Отображаются все трубы");
+    log("Показаны все трубы");
 }
 
 void PipeManager::editPipe() {
@@ -37,45 +37,8 @@ void PipeManager::editPipe() {
     int id = readPositive<int>("Введите ID трубы: ", "Неверный ID");
     auto it = pipes.find(id);
     if (it != pipes.end()) {
-        cout << "\nТекущая информация о трубе:\n";
-        cout << "ID " << id << ": " << it->second << endl;
-
-        cout << "\nИзменить статус ремонта:\n";
-        cout << "1. Установить 'В ремонте'\n";
-        cout << "2. Установить 'Работает'\n";
-        cout << "3. Переключить (инвертировать текущий статус)\n";
-        cout << "0. Отмена\n";
-
-        int choice = inputIntInRange("Выберите действие: ", 0, 3);
-
-        // Создаем копию трубы для редактирования
-        Pipe pipe = it->second;
-
-        switch (choice) {
-        case 1:
-            if (!pipe.getUnderRepair()) {
-                pipe.toggleRepair(); // меняем на "в ремонте"
-            }
-            cout << "Статус установлен: В ремонте\n";
-            break;
-        case 2:
-            if (pipe.getUnderRepair()) {
-                pipe.toggleRepair(); // меняем на "работает"
-            }
-            cout << "Статус установлен: Работает\n";
-            break;
-        case 3:
-            pipe.toggleRepair();
-            cout << "Статус переключен\n";
-            break;
-        case 0:
-            cout << "Отмена.\n";
-            return;
-        }
-
-        // Сохраняем измененную трубу
-        pipes[id] = pipe;
-        cout << "Изменения сохранены.\n";
+        it->second.toggleRepair();
+        cout << "Статус трубы изменен.\n";
     }
     else {
         cout << "Труба с ID " << id << " не найдена.\n";
@@ -116,9 +79,6 @@ vector<int> PipeManager::searchByName(const string& name) const {
             }
         }
     }
-    else {
-        cout << "Трубы не найдены.\n";
-    }
 
     return foundIds;
 }
@@ -141,10 +101,17 @@ vector<int> PipeManager::searchByRepairStatus(bool inRepair) const {
             }
         }
     }
-    else {
-        cout << "Трубы не найдены.\n";
-    }
 
+    return foundIds;
+}
+
+vector<int> PipeManager::searchByDiameter(int diameter) const {
+    vector<int> foundIds;
+    for (const auto& pair : pipes) {
+        if (pair.second.getDiameter() == diameter) {
+            foundIds.push_back(pair.first);
+        }
+    }
     return foundIds;
 }
 
@@ -206,4 +173,12 @@ void PipeManager::loadFromFile(const string& filename) {
     file.close();
     cout << "Загружено труб: " << count << endl;
     log("Загрузка труб из " + filename + ": " + to_string(count));
+}
+
+Pipe PipeManager::getPipeById(int id) const {
+    auto it = pipes.find(id);
+    if (it != pipes.end()) {
+        return it->second;
+    }
+    return Pipe(); // Возвращаем пустую трубу если не найдена
 }
