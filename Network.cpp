@@ -1,9 +1,11 @@
 #include "Network.h"
 #include "utils.h"
+#include <algorithm>
+#include <climits>
 #include <iostream>
 
 void Network::addConnection(int pipeId, int startCS, int endCS, int diameter, Pipe& pipe, CompressorStation& startStation, CompressorStation& endStation) {
-    Edge edge{ pipeId, startCS, endCS, diameter };
+    Edge edge{ pipeId, startCS, endCS, diameter, (double)diameter };
 
     // Проверяем, существует ли уже такое соединение
     for (const auto& existingEdge : adjacencyList[startCS]) {
@@ -133,4 +135,154 @@ bool Network::hasCycleDFS(int v, map<int, bool>& visited, map<int, bool>& recSta
 bool Network::isPipeUsed(int pipeId) const {
     auto it = usedPipes.find(pipeId);
     return it != usedPipes.end() && it->second;
+}
+
+bool Network::bfsForFlow(int source, int sink, map<int, int>& parent) {
+    map<int, bool> visited;
+    queue<int> q;
+
+    q.push(source);
+    visited[source] = true;
+    parent[source] = -1;
+
+    while (!q.empty()) {
+        int u = q.front();
+        q.pop();
+
+        for (const Edge& edge : adjacencyList[u]) {
+            int v = edge.endCS;
+            if (!visited[v] && edge.capacity > 0) {
+                q.push(v);
+                parent[v] = u;
+                visited[v] = true;
+                if (v == sink) return true;
+            }
+        }
+    }
+    return false;
+}
+
+// НОВЫЙ МЕТОД: максимальный поток (Форд-Фалкерсон)
+double Network::maximumFlow(int source, int sink) {
+    double maxFlow = 0;
+    map<int, int> parent;
+
+    // Создаем копию графа с пропускными способностями
+    map<int, vector<Edge>> residualGraph = adjacencyList;
+
+    // Устанавливаем capacity для всех ребер (здесь - диаметр как пропускная способность)
+    for (auto& pair : residualGraph) {
+        for (Edge& edge : pair.second) {
+            edge.capacity = edge.diameter; // или другая формула
+        }
+    }
+
+    // Ищем увеличивающие пути
+    while (bfsForFlow(source, sink, parent)) {
+        double pathFlow = INT_MAX;
+
+        // Находим минимальную пропускную способность на пути
+        for (int v = sink; v != source; v = parent[v]) {
+            int u = parent[v];
+            for (const Edge& edge : residualGraph[u]) {
+                if (edge.endCS == v) {
+                    pathFlow = min(pathFlow, edge.capacity);
+                    break;
+                }
+            }
+        }
+
+        // Обновляем остаточные пропускные способности
+        for (int v = sink; v != source; v = parent[v]) {
+            int u = parent[v];
+
+            // Уменьшаем capacity прямого ребра
+            for (Edge& edge : residualGraph[u]) {
+                if (edge.endCS == v) {
+                    edge.capacity -= pathFlow;
+                    break;
+                }
+            }
+
+            // Увеличиваем capacity обратного ребра
+            bool reverseEdgeFound = false;
+            for (Edge& edge : residualGraph[v]) {
+                if (edge.endCS == u) {
+                    edge.capacity += pathFlow;
+                    reverseEdgeFound = true;
+                    break;
+                }
+            }
+
+            // Если обратного ребра нет - добавляем
+            if (!reverseEdgeFound) {
+                Edge reverseEdge;
+                reverseEdge.startCS = v;
+                reverseEdge.endCS = u;
+                reverseEdge.capacity = pathFlow;
+                residualGraph[v].push_back(reverseEdge);
+            }
+        }
+
+        maxFlow += pathFlow;
+    }
+
+    return maxFlow;
+}
+
+// НОВЫЙ МЕТОД: вес трубы (например, длина)
+double Network::getPipeWeight(int pipeId) {
+    auto pipeIt = pipes.find(pipeId);
+    if (pipeIt != pipes.end()) {
+        return pipeIt->second.getLength(); // Длина как вес
+    }
+    return INT_MAX; // Если труба не найдена
+}
+
+// НОВЫЙ МЕТОД: кратчайший путь (Дейкстра)
+vector<int> Network::shortestPath(int startCS, int endCS) {
+    map<int, double> dist;
+    map<int, int> prev;
+    set<pair<double, int>> pq;
+
+    for (const auto& pair : adjacencyList) {
+        dist[pair.first] = INT_MAX;
+        prev[pair.first] = -1;
+    }
+    for (const auto& pipePair : pipes) {
+        // КС, соединенные трубами, уже учтены в adjacencyList
+    }
+
+    dist[startCS] = 0;
+    pq.insert({ 0, startCS });
+
+    while (!pq.empty()) {
+        int u = pq.begin()->second;
+        pq.erase(pq.begin());
+
+        if (u == endCS) break;
+
+        for (const Edge& edge : adjacencyList[u]) {
+            int v = edge.endCS;
+            double weight = getPipeWeight(edge.pipeId);
+
+            if (dist[v] > dist[u] + weight) {
+                pq.erase({ dist[v], v });
+                dist[v] = dist[u] + weight;
+                prev[v] = u;
+                pq.insert({ dist[v], v });
+            }
+        }
+    }
+
+    // Восстановление пути
+    vector<int> path;
+    if (dist[endCS] < INT_MAX) {
+        for (int at = endCS; at != -1; at = prev[at]) {
+            path.push_back(at);
+        }
+        reverse(path.begin(), path.end());
+    }
+
+    return path;
 }

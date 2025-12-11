@@ -6,6 +6,7 @@
 #include <map>
 #include <set>
 #include <queue>
+#include <climits>
 #include "Pipe.h"
 #include "CompressorStation.h"
 
@@ -16,6 +17,7 @@ struct Edge {
     int startCS;
     int endCS;
     int diameter;
+    double capacity; // Пропускная способность 
     bool operator==(const Edge& other) const {
         return pipeId == other.pipeId && startCS == other.startCS && endCS == other.endCS;
     }
@@ -36,6 +38,14 @@ public:
     bool hasCycleDFS(int v, map<int, bool>& visited, map<int, bool>& recStack) const;
     map<int, vector<Edge>> getAdjacencyList() const { return adjacencyList; }
     bool isPipeUsed(int pipeId) const;
+
+    //расчет максимального потока
+    double maximumFlow(int source, int sink);
+    bool bfsForFlow(int source, int sink, map<int, int>& parent);
+
+    //кратчайший путь
+    vector<int> shortestPath(int startCS, int endCS);
+    double getPipeWeight(int pipeId); // Вес трубы для пути (например, длина)
 };
 
 #endif

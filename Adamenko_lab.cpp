@@ -44,6 +44,8 @@ void displayNetworkMenu() {
     cout << "1. Добавить соединение\n";
     cout << "2. Показать сеть\n";
     cout << "3. Топологическая сортировка\n";
+    cout << "4. Максимальный поток\n";      
+    cout << "5. Кратчайший путь\n";          
     cout << "0. Назад\n";
 }
 
@@ -213,7 +215,7 @@ void handleStations(CompressorStationManager& stationManager) {
 void handleNetwork(PipeManager& pipeManager, CompressorStationManager& stationManager, Network& network) {
     while (true) {
         displayNetworkMenu();
-        int choice = inputIntInRange("Выберите действие: ", 0, 3);
+        int choice = inputIntInRange("Выберите действие: ", 0, 5);
 
         switch (choice) {
         case 1: {
@@ -290,9 +292,66 @@ void handleNetwork(PipeManager& pipeManager, CompressorStationManager& stationMa
                 }
             }
             break;
+        case 4: { // НОВОЕ: Максимальный поток
+            cout << "=== РАСЧЕТ МАКСИМАЛЬНОГО ПОТОКА ===\n";
+            if (stationManager.isEmpty()) {
+                cout << "Нет доступных КС.\n";
+                break;
+            }
+
+            stationManager.displayAllStations();
+            int source = readPositive<int>("Введите ID КС-источника: ", "Неверный ID");
+            int sink = readPositive<int>("Введите ID КС-стока: ", "Неверный ID");
+
+            if (!stationManager.stationExists(source) || !stationManager.stationExists(sink)) {
+                cout << "Одна или обе КС не найдены.\n";
+                break;
+            }
+
+            double maxFlow = network.maximumFlow(source, sink);
+            cout << "Максимальный поток от КС " << source << " к КС " << sink
+                << ": " << maxFlow << " (усл. ед.)\n";
+            log("Расчет максимального потока: " + to_string(source) + " -> " +
+                to_string(sink) + " = " + to_string(maxFlow));
+            break;
         }
+
+        case 5: { // НОВОЕ: Кратчайший путь
+            cout << "=== РАСЧЕТ КРАТЧАЙШЕГО ПУТИ ===\n";
+            if (stationManager.isEmpty()) {
+                cout << "Нет доступных КС.\n";
+                break;
+            }
+
+            stationManager.displayAllStations();
+            int start = readPositive<int>("Введите ID начальной КС: ", "Неверный ID");
+            int end = readPositive<int>("Введите ID конечной КС: ", "Неверный ID");
+
+            if (!stationManager.stationExists(start) || !stationManager.stationExists(end)) {
+                cout << "Одна или обе КС не найдены.\n";
+                break;
+            }
+
+            vector<int> path = network.shortestPath(start, end);
+
+            if (path.empty()) {
+                cout << "Путь между КС " << start << " и КС " << end << " не найден.\n";
+            }
+            else {
+                cout << "Кратчайший путь: ";
+                for (size_t i = 0; i < path.size(); i++) {
+                    cout << "КС " << path[i];
+                    if (i != path.size() - 1) cout << " -> ";
+                }
+                cout << "\nДлина пути: " << path.size() - 1 << " переходов\n";
+            }
+            log("Расчет кратчайшего пути: " + to_string(start) + " -> " + to_string(end));
+            break;
+        }
+
         case 0:
             return;
+        }
         }
     }
 }
